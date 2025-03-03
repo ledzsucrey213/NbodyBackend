@@ -31,7 +31,7 @@ public class SimulationResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<CorpsCeleste> simulate() {
         // Effectuer un pas de simulation
-        simulation.calculerForces(0.1);  // dt = 0.1 seconde
+        simulation.calculerForces(1);  // dt = 0.1 seconde
 
         // Retourner la liste des corps célestes
         return simulation.ListeCorps();
