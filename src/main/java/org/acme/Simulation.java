@@ -3,70 +3,57 @@ package org.acme;
 import java.util.List;
 
 public class Simulation {
-    private static final double G = 6.67430e-11;
-    private final List<CorpsCeleste> corpsCelestes;
+
+    private static final double G = 6.67430e-11; // Constante gravitationnelle
+    private List<CorpsCeleste> corps;
 
     public Simulation(List<CorpsCeleste> corps) {
-        this.corpsCelestes = corps;
+        this.corps = corps;
     }
 
-    public void calculerForces(double dt) {
-        int n = corpsCelestes.size();
-        double[][] forcesX = new double[n][n];
-        double[][] forcesY = new double[n][n];
+    public void updateSimulation(double temps) {
+        // Calcul des forces gravitationnelles et mise à jour des vitesses et positions
+        for (int i = 0; i < corps.size(); i++) {
+            CorpsCeleste corps1 = corps.get(i);
+            double forceX = 0;
+            double forceY = 0;
 
-        // 1️⃣ Calcul des forces entre chaque paire de corps
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                CorpsCeleste a = corpsCelestes.get(i);
-                CorpsCeleste b = corpsCelestes.get(j);
-
-                double dx = b.getPositionX() - a.getPositionX();
-                double dy = b.getPositionY() - a.getPositionY();
-                double r = Math.sqrt(dx * dx + dy * dy);
-
-                if (r == 0) continue; // Évite la division par zéro
-
-                double force = (G * a.getMasse() * b.getMasse()) / (r * r);
-                double forceX = force * (dx / r);
-                double forceY = force * (dy / r);
-
-                forcesX[i][j] = forceX;
-                forcesY[i][j] = forceY;
-                forcesX[j][i] = -forceX;
-                forcesY[j][i] = -forceY;
-            }
-        }
-
-        // 2️⃣ Mise à jour des vitesses et positions
-        for (int i = 0; i < n; i++) {
-            CorpsCeleste a = corpsCelestes.get(i);
-            double totalForceX = 0;
-            double totalForceY = 0;
-
-            for (int j = 0; j < n; j++) {
+            for (int j = 0; j < corps.size(); j++) {
                 if (i != j) {
-                    totalForceX += forcesX[i][j];
-                    totalForceY += forcesY[i][j];
+                    CorpsCeleste corps2 = corps.get(j);
+                    double[] force = calculateGravitationalForce(corps1, corps2);
+                    forceX += force[0];
+                    forceY += force[1];
                 }
             }
 
-            // Accélération a = F / m
-            double ax = totalForceX / a.getMasse();
-            double ay = totalForceY / a.getMasse();
+            // Met à jour la vitesse en fonction de la force
+            corps1.setVitesseX(corps1.getVitesseX() + forceX * temps / corps1.getMasse());
+            corps1.setVitesseY(corps1.getVitesseY() + forceY * temps / corps1.getMasse());
 
-            // Mise à jour des vitesses : v = v + a * dt
-            a.setVitesseX(a.getVitesseX() + ax * dt);
-            a.setVitesseY(a.getVitesseY() + ay * dt);
-
-            // Mise à jour des positions : x = x + v * dt
-            a.setPositionX(a.getPositionX() + a.getVitesseX() * dt);
-            a.setPositionY(a.getPositionY() + a.getVitesseY() * dt);
+            // Met à jour la position
+            corps1.updatePosition(temps);
         }
     }
 
-    public List<CorpsCeleste> ListeCorps() {
-        return this.corpsCelestes;
+    private double[] calculateGravitationalForce(CorpsCeleste corps1, CorpsCeleste corps2) {
+        double dx = corps2.getPositionX() - corps1.getPositionX();
+        double dy = corps2.getPositionY() - corps1.getPositionY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Si la distance est trop petite pour éviter la division par zéro
+        if (distance < 1e-10) {
+            return new double[]{0, 0};
+        }
+
+        double forceMagnitude = G * corps1.getMasse() * corps2.getMasse() / (distance * distance);
+        double forceX = forceMagnitude * dx / distance;
+        double forceY = forceMagnitude * dy / distance;
+
+        return new double[]{forceX, forceY};
     }
 
+    public List<CorpsCeleste> getCorps() {
+        return corps;
+    }
 }
